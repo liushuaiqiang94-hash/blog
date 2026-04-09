@@ -1,146 +1,146 @@
-# Minimal Blog Design
+# 最小博客设计方案
 
-Date: 2026-04-09
+日期：2026-04-09
 
-## Overview
+## 概述
 
-This project is a minimal blog system with separate public and admin experiences under two subdomains.
+这个项目是一个最小版本的博客系统，使用两个子域名分别承载公开站点和后台管理。
 
-- Public site: blog subdomain for visitors
-- Admin site: admin subdomain for the site owner
-- Backend: Spring Boot
-- Frontend: Vue
-- Database: MySQL
-- Database migration: Flyway
+- 公开站点：博客子域名，供访客浏览
+- 后台站点：管理子域名，供站长维护内容
+- 后端：Spring Boot
+- 前端：Vue
+- 数据库：MySQL
+- 数据库迁移：Flyway
 
-The first release is intentionally narrow. It only includes:
+第一版严格控制范围，只包含以下能力：
 
-- Public home page
-- Public post detail page
-- Admin login
-- Admin post management
+- 前台首页
+- 前台文章详情页
+- 后台登录
+- 后台文章管理
 
-The system stores post bodies as Markdown in the database and renders them on the public detail page.
+文章正文以 Markdown 原文存储在数据库中，在前台详情页渲染展示。
 
-## Goals
+## 目标
 
-- Ship a small but complete blog product with clear separation between reading and management
-- Support writing and managing Markdown posts from an admin interface
-- Publish posts to the public site with a draft and published workflow
-- Keep the architecture simple enough to build and deploy quickly
+- 交付一个完整但足够小的博客产品，前台浏览与后台管理职责清晰
+- 支持在后台以 Markdown 方式编写和管理文章
+- 支持文章以“草稿 / 已发布”的方式流转
+- 保持架构足够简单，方便快速开发和部署
 
-## Non-Goals
+## 非目标
 
-- Categories, tags, comments, likes, search, RSS, and multi-user authoring
-- Rich text editing
-- Scheduled publishing
-- Media library
-- Revision history
-- Public API for third-party consumers
+- 分类、标签、评论、点赞、搜索、RSS、多作者协作
+- 富文本编辑器
+- 定时发布
+- 媒体库
+- 历史版本
+- 面向第三方的开放 API
 
-## Recommended Architecture
+## 推荐架构
 
-The recommended approach is three applications in one repository:
+推荐采用一个仓库下的三个应用：
 
-- `blog-web`: Vue app for the public blog
-- `admin-web`: Vue app for the admin interface
-- `blog-api`: Spring Boot application for authentication, post management, and public post queries
+- `blog-web`：前台博客 Vue 应用
+- `admin-web`：后台管理 Vue 应用
+- `blog-api`：Spring Boot 应用，负责认证、文章管理和前台公开查询
 
-This matches the two-subdomain requirement cleanly while keeping backend logic centralized.
+这个结构最符合两个子域名的场景，同时把后端逻辑集中在一处，便于维护。
 
-### Why this approach
+### 选择这个方案的原因
 
-- It maps naturally to `blog.<domain>` and `admin.<domain>`
-- It keeps the public site and admin UI isolated from each other
-- It allows both frontends to share one backend and one database
-- It stays simple enough for a minimal first version
+- 与 `blog.<domain>` 和 `admin.<domain>` 的域名结构天然对应
+- 前台和后台在代码与职责上彼此隔离
+- 两个前端共用一套后端和一套数据库
+- 对最小版本来说足够简单，后续也方便扩展
 
-### Alternatives considered
+### 备选方案
 
-1. Single Vue frontend for both public and admin pages plus one Spring Boot backend
+1. 一个 Vue 前端同时承载前台和后台，再配一个 Spring Boot 后端
 
-This reduces the number of frontend projects but mixes two different experiences into one app. It is less natural for the two-subdomain setup and makes later maintenance messier.
+这样可以少一个前端项目，但会把两种不同的体验混在一起，不够贴合双子域名结构，后续维护也更容易耦合。
 
-2. Spring Boot rendered public pages plus Vue admin frontend
+2. Spring Boot 渲染前台页面，Vue 只做后台
 
-This can work, but it splits the frontend technology approach and increases implementation complexity for a small first release.
+这个方案可以做，但会让前端技术路线不统一，对于当前这个最小项目反而增加实现复杂度。
 
-## Domain and Deployment Model
+## 域名与部署模型
 
-- `blog.<domain>` serves the public Vue app
-- `admin.<domain>` serves the admin Vue app
-- Both frontends call backend APIs under `/api`
-- Nginx routes requests by subdomain and proxies `/api` to Spring Boot
-- Spring Boot connects to MySQL and runs Flyway on startup
+- `blog.<domain>` 提供前台 Vue 应用
+- `admin.<domain>` 提供后台 Vue 应用
+- 两个前端都通过 `/api` 调用后端接口
+- Nginx 根据子域名分发请求，并把 `/api` 反向代理到 Spring Boot
+- Spring Boot 连接 MySQL，并在启动时执行 Flyway 迁移
 
-This design avoids introducing a third API domain and keeps deployment straightforward.
+这个设计不需要单独增加第三个 API 域名，部署结构也更直观。
 
-## User Experience Scope
+## 用户侧功能范围
 
-### Public site
+### 前台站点
 
-The public site has exactly two pages:
+前台严格只有两个页面：
 
-1. Home page
-2. Post detail page
+1. 首页
+2. 文章详情页
 
-#### Home page
+#### 首页
 
-- Show published posts only
-- Display title, summary, and published time
-- Allow click-through to the post detail page
+- 只展示已发布文章
+- 展示标题、摘要、发布时间
+- 支持点击进入文章详情页
 
-#### Post detail page
+#### 文章详情页
 
-- Load a published post by slug
-- Render Markdown content as HTML
-- Return 404 if the post does not exist or is not published
+- 通过 slug 加载一篇已发布文章
+- 将 Markdown 正文渲染为 HTML
+- 如果文章不存在或未发布，返回 404
 
-### Admin site
+### 后台站点
 
-The admin site includes exactly three views:
+后台只包含三个必要视图：
 
-1. Login page
-2. Post list page
-3. Post editor page
+1. 登录页
+2. 文章列表页
+3. 文章编辑页
 
-#### Login page
+#### 登录页
 
-- Single admin username and password
-- Login required before accessing admin features
+- 单管理员账号密码登录
+- 未登录不得访问后台功能
 
-#### Post list page
+#### 文章列表页
 
-- Show all posts regardless of status
-- Distinguish draft and published states clearly
-- Support create, edit, and delete actions
+- 展示所有文章，不区分是否发布
+- 清晰区分草稿和已发布状态
+- 支持新建、编辑、删除
 
-#### Post editor page
+#### 文章编辑页
 
-- Edit title
-- Edit slug
-- Edit summary
-- Edit Markdown body
-- Save as draft
-- Publish
+- 编辑标题
+- 编辑 slug
+- 编辑摘要
+- 编辑 Markdown 正文
+- 保存为草稿
+- 发布文章
 
-## Authentication Design
+## 认证设计
 
-Authentication is single-admin only.
+后台认证采用单管理员模式。
 
-### Recommended mechanism
+### 推荐机制
 
-- Spring Security based authentication
-- Session or server-managed login state
-- `HttpOnly` cookie for browser authentication state
+- 基于 Spring Security
+- 使用服务端维护的会话登录态
+- 浏览器通过 `HttpOnly` Cookie 持有认证状态
 
-### Why not JWT first
+### 不优先使用 JWT 的原因
 
-JWT adds complexity that is not needed for a single-admin internal system. Session-based auth is simpler, safer for this scope, and easier to manage for login and logout.
+当前场景是单管理员后台，不是开放平台。JWT 会额外引入不必要的复杂度，而基于会话的方案更简单、更稳，也更适合登录和退出这样的最小后台需求。
 
-## Data Model
+## 数据模型
 
-The first version should use only two core tables.
+第一版建议只保留两张核心表。
 
 ### `admin_user`
 
@@ -157,39 +157,39 @@ The first version should use only two core tables.
 - `slug`
 - `summary`
 - `content_markdown`
-- `status` with values `DRAFT` and `PUBLISHED`
+- `status`，取值为 `DRAFT` 和 `PUBLISHED`
 - `published_at`
 - `created_at`
 - `updated_at`
 
-## Data Rules
+## 数据规则
 
-- `slug` must be unique
-- `title` is required
-- `content_markdown` is required
-- New posts default to `DRAFT`
-- Public APIs must only expose `PUBLISHED` posts
-- If a published post is moved back to draft, it disappears from public results
-- `published_at` is set when a post is first published
+- `slug` 必须唯一
+- `title` 必填
+- `content_markdown` 必填
+- 新建文章默认状态为 `DRAFT`
+- 前台公开接口只能返回 `PUBLISHED` 状态的文章
+- 已发布文章如果改回草稿，需要从前台结果中消失
+- `published_at` 在文章首次发布时写入
 
-## Markdown Handling
+## Markdown 处理方式
 
-- The database stores raw Markdown in `content_markdown`
-- The public post detail page renders Markdown to HTML
-- Admin editing works against Markdown source, not rich text
+- 数据库中保存 Markdown 原文，字段为 `content_markdown`
+- 前台详情页负责把 Markdown 渲染成 HTML
+- 后台始终围绕 Markdown 原文进行编辑，不引入富文本编辑器
 
-This keeps authoring simple and aligns with the user's preference for note-style blogging.
+这种方式和“笔记型博客”的需求最一致，也能把第一版复杂度压到最低。
 
-## API Design
+## 接口设计
 
-### Public APIs
+### 前台公开接口
 
 - `GET /api/posts`
-  - Return published post list
+  - 返回已发布文章列表
 - `GET /api/posts/{slug}`
-  - Return one published post by slug
+  - 根据 slug 返回一篇已发布文章详情
 
-### Admin APIs
+### 后台管理接口
 
 - `POST /api/admin/auth/login`
 - `POST /api/admin/auth/logout`
@@ -199,84 +199,85 @@ This keeps authoring simple and aligns with the user's preference for note-style
 - `PUT /api/admin/posts/{id}`
 - `DELETE /api/admin/posts/{id}`
 
-## Flyway Strategy
+## Flyway 策略
 
-Flyway is required from the beginning.
+Flyway 从第一天就必须接入。
 
-### Rules
+### 规则
 
-- Store migration files inside the Spring Boot project
-- Create initial schema using Flyway, not manual database setup
-- Use new migration files for every schema change
-- Do not rewrite old migration files after they have been applied in shared environments
+- 迁移文件放在 Spring Boot 项目内部
+- 初始表结构必须通过 Flyway 创建，而不是手动建库建表
+- 后续每次结构调整都新增迁移文件
+- 已经在共享环境执行过的迁移文件不允许被重写
 
-### Initial migration scope
+### 初始迁移范围
 
-The first migration should create:
+第一批迁移至少创建以下内容：
 
 - `admin_user`
 - `post`
-- required indexes and unique constraint for `slug`
+- 必要索引
+- `slug` 唯一约束
 
-### Admin bootstrap
+### 初始管理员创建方式
 
-The initial administrator will be created by a backend startup initialization path, not by a Flyway seed record.
+初始管理员不通过 Flyway 种子数据写入，而由后端启动初始化逻辑创建。
 
-Rules:
+规则如下：
 
-- Flyway creates schema only
-- Spring Boot checks whether an admin user exists during startup
-- If no admin exists, Spring Boot creates one from configured bootstrap credentials
-- The bootstrap password must be stored as a hash in the database
+- Flyway 只负责建表和结构迁移
+- Spring Boot 启动时检查是否已有管理员账号
+- 如果没有管理员账号，则根据配置的引导凭据创建一个初始管理员
+- 引导密码写入数据库前必须先做哈希处理
 
-This keeps migrations deterministic while avoiding hardcoded admin credentials in SQL files.
+这样可以保证迁移脚本保持确定性，同时避免把固定管理员凭据写死在 SQL 文件中。
 
-## Publishing Workflow
+## 发布流程
 
-The publishing flow stays intentionally small:
+发布流程保持最小闭环：
 
-1. Admin creates a post
-2. Post starts in `DRAFT`
-3. Admin saves draft changes as needed
-4. Admin publishes the post
-5. Public site shows the post once it is `PUBLISHED`
-6. Admin can move a post back to draft to remove it from the public site
+1. 管理员新建文章
+2. 新文章默认进入 `DRAFT`
+3. 管理员可以多次保存草稿
+4. 管理员执行发布操作
+5. 文章状态变为 `PUBLISHED` 后出现在前台
+6. 管理员也可以把已发布文章重新改回草稿，从前台撤下
 
-## Error Handling
+## 错误处理
 
-### Public site
+### 前台
 
-- Return 404 for missing posts
-- Treat draft posts as not found on public APIs
+- 文章不存在时返回 404
+- 草稿文章在前台按“不存在”处理，不暴露草稿状态
 
-### Admin site
+### 后台
 
-- Return 401 for unauthenticated admin API access
-- Return validation errors for missing title or body
-- Return a clear error when `slug` is duplicated
+- 未登录访问后台接口时返回 401
+- 标题或正文为空时返回明确校验错误
+- `slug` 重复时返回明确错误提示
 
-## Testing Scope
+## 测试范围
 
-This minimal version still needs targeted tests.
+即使是最小版本，也需要覆盖关键路径。
 
-### Backend
+### 后端
 
-- Authentication success and failure
-- Admin post create, update, delete
-- Public APIs return published posts only
-- Draft posts are not accessible publicly
-- Flyway migrations run successfully on startup
+- 登录成功与失败
+- 后台文章新增、修改、删除
+- 前台接口只返回已发布文章
+- 草稿文章不能通过前台访问
+- Flyway 迁移可以在启动时正常执行
 
-### Frontend
+### 前端
 
-- Public home page renders post list
-- Public detail page renders Markdown content
-- Admin login flow works
-- Admin can create and edit a post
+- 前台首页正确渲染文章列表
+- 前台详情页正确渲染 Markdown 内容
+- 后台登录流程可用
+- 后台可以完成文章创建与编辑
 
-## Project Structure
+## 项目结构建议
 
-The repository should be organized like this:
+仓库建议组织为：
 
 ```text
 blog111/
@@ -288,47 +289,47 @@ blog111/
       specs/
 ```
 
-## Implementation Boundaries
+## 实现边界
 
-The first implementation should avoid expanding scope beyond the approved minimal product.
+第一版实现时不要突破已经确认的最小范围。
 
-Keep:
+保留：
 
-- Two public pages
-- Admin login
-- Admin post management
-- Markdown storage
-- Draft and published status
-- Flyway-backed schema management
+- 两个前台页面
+- 后台登录
+- 后台文章管理
+- Markdown 存储
+- 草稿 / 已发布状态
+- Flyway 管理数据库结构
 
-Do not add in the first pass:
+第一版不加入：
 
-- Tag systems
-- Search
-- Pagination unless it becomes necessary for basic usability
-- File uploads
-- Multiple admin roles
+- 标签体系
+- 搜索
+- 分页，除非最基础可用性已经明显需要
+- 文件上传
+- 多管理员角色
 
-## Open Decisions Resolved In This Spec
+## 本方案已确定的决策
 
-The following decisions are fixed for implementation:
+以下决策在实现阶段不再反复讨论，直接按此执行：
 
-- Frontend uses Vue
-- Backend uses Spring Boot
-- Database uses MySQL
-- Content is Markdown stored in the database
-- Authentication is a single admin username and password
-- Post statuses are `DRAFT` and `PUBLISHED`
-- Schema management uses Flyway
-- Public and admin sites use separate subdomains
+- 前端使用 Vue
+- 后端使用 Spring Boot
+- 数据库使用 MySQL
+- 内容以 Markdown 形式存入数据库
+- 认证方式为单管理员账号密码
+- 文章状态为 `DRAFT` 和 `PUBLISHED`
+- 数据库迁移使用 Flyway
+- 前台和后台使用不同子域名
 
-## Success Criteria
+## 成功标准
 
-The first release is successful when:
+当满足以下条件时，第一版即可视为完成：
 
-- Visitors can open the public home page and see published posts
-- Visitors can open a post detail page and read rendered Markdown content
-- The site owner can log in to the admin site
-- The site owner can create, edit, publish, draft, and delete posts
-- Database schema is managed by Flyway
-- Deployment works cleanly with one public subdomain and one admin subdomain
+- 访客可以打开前台首页并看到已发布文章列表
+- 访客可以打开文章详情页并阅读渲染后的 Markdown 内容
+- 站长可以登录后台
+- 站长可以创建、编辑、发布、转回草稿、删除文章
+- 数据库结构由 Flyway 管理
+- 系统可以在一个前台子域名和一个后台子域名下顺利部署
