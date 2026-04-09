@@ -26,14 +26,14 @@
 
 - `/opt/blog111/blog111`
 
-然后把证书放到项目目录内：
+证书使用服务器上的固定绝对路径：
 
-- `/opt/blog111/blog111/certs/site/fullchain.pem`
-- `/opt/blog111/blog111/certs/site/privkey.key`
-- `/opt/blog111/blog111/certs/api/fullchain.pem`
-- `/opt/blog111/blog111/certs/api/privkey.key`
+- `/etc/nginx/certs/site/fullchain.pem`
+- `/etc/nginx/certs/site/privkey.pem`
+- `/etc/nginx/certs/api/fullchain.pem`
+- `/etc/nginx/certs/api/privkey.pem`
 
-这些证书文件不会进 git，但会被 `docker-compose.yml` 直接挂载给 `nginx` 容器。
+这些证书文件不需要放进项目目录，`docker-compose.yml` 会直接把它们挂载给 `nginx` 容器。
 
 ## 环境变量
 

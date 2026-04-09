@@ -110,14 +110,14 @@ npm run dev
 
 - `/opt/blog111/blog111`
 
-### 2. 放置证书
+### 2. 准备证书
 
-把证书文件放到这两个目录：
+服务器证书使用固定绝对路径挂载：
 
-- `certs/site/fullchain.pem`
-- `certs/site/privkey.key`
-- `certs/api/fullchain.pem`
-- `certs/api/privkey.key`
+- `/etc/nginx/certs/site/fullchain.pem`
+- `/etc/nginx/certs/site/privkey.pem`
+- `/etc/nginx/certs/api/fullchain.pem`
+- `/etc/nginx/certs/api/privkey.pem`
 
 其中：
 
