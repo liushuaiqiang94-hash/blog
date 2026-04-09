@@ -4,6 +4,7 @@
 # Java
 blog-api/target/
 blog-api/.mvn/
+blog-api/*.log
 
 # Node
 blog-web/node_modules/
