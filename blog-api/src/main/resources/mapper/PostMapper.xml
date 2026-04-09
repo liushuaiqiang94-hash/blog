@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.blogapi.mapper.PostMapper">
+
+    <resultMap id="PostResultMap" type="com.example.blogapi.domain.Post">
+        <id column="id" property="id"/>
+        <result column="slug" property="slug"/>
+        <result column="title" property="title"/>
+        <result column="content_markdown" property="contentMarkdown"/>
+        <result column="status" property="status"/>
+        <result column="published_at" property="publishedAt"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="findAllByStatusOrderByPublishedAtDesc" resultMap="PostResultMap">
+        select id, slug, title, content_markdown, status, published_at, created_at, updated_at
+        from post
+        where status = #{status}
+        order by published_at desc, id desc
+    </select>
+
+    <select id="findBySlugAndStatus" resultMap="PostResultMap">
+        select id, slug, title, content_markdown, status, published_at, created_at, updated_at
+        from post
+        where slug = #{slug}
+          and status = #{status}
+    </select>
+
+    <select id="existsBySlug" resultType="boolean">
+        select count(1) > 0
+        from post
+        where slug = #{slug}
+    </select>
+</mapper>
