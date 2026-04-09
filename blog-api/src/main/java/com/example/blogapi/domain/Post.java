@@ -7,6 +7,7 @@ public class Post {
     private Long id;
     private String slug;
     private String title;
+    private String summary;
     private String contentMarkdown;
     private PostStatus status;
     private LocalDateTime publishedAt;
@@ -16,9 +17,10 @@ public class Post {
     public Post() {
     }
 
-    public Post(String slug, String title, String contentMarkdown, PostStatus status) {
+    public Post(String slug, String title, String summary, String contentMarkdown, PostStatus status) {
         this.slug = slug;
         this.title = title;
+        this.summary = summary;
         this.contentMarkdown = contentMarkdown;
         this.status = status;
         this.publishedAt = status == PostStatus.PUBLISHED ? LocalDateTime.now() : null;
@@ -46,6 +48,14 @@ public class Post {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 
     public String getContentMarkdown() {

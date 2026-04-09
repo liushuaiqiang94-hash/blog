@@ -12,6 +12,7 @@ CREATE TABLE post (
     id BIGINT NOT NULL AUTO_INCREMENT,
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
+    summary VARCHAR(500) NOT NULL,
     content_markdown LONGTEXT NOT NULL,
     status VARCHAR(32) NOT NULL,
     published_at DATETIME(6) NULL,

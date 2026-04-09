@@ -18,6 +18,7 @@ class FlywayMigrationTest extends MySqlContainerSupport {
     void createsAdminUserAndPostTables() {
         assertThat(tableExists("admin_user")).isTrue();
         assertThat(tableExists("post")).isTrue();
+        assertThat(columnExists("post", "summary")).isTrue();
     }
 
     private boolean tableExists(String tableName) {
@@ -30,6 +31,21 @@ class FlywayMigrationTest extends MySqlContainerSupport {
                 """,
                 Integer.class,
                 tableName);
+        return count != null && count > 0;
+    }
+
+    private boolean columnExists(String tableName, String columnName) {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                select count(*)
+                from information_schema.columns
+                where table_schema = database()
+                  and table_name = ?
+                  and column_name = ?
+                """,
+                Integer.class,
+                tableName,
+                columnName);
         return count != null && count > 0;
     }
 }

@@ -8,6 +8,7 @@
         <id column="id" property="id"/>
         <result column="slug" property="slug"/>
         <result column="title" property="title"/>
+        <result column="summary" property="summary"/>
         <result column="content_markdown" property="contentMarkdown"/>
         <result column="status" property="status"/>
         <result column="published_at" property="publishedAt"/>
@@ -16,14 +17,14 @@
     </resultMap>
 
     <select id="findAllByStatusOrderByPublishedAtDesc" resultMap="PostResultMap">
-        select id, slug, title, content_markdown, status, published_at, created_at, updated_at
+        select id, slug, title, summary, content_markdown, status, published_at, created_at, updated_at
         from post
         where status = #{status}
         order by published_at desc, id desc
     </select>
 
     <select id="findBySlugAndStatus" resultMap="PostResultMap">
-        select id, slug, title, content_markdown, status, published_at, created_at, updated_at
+        select id, slug, title, summary, content_markdown, status, published_at, created_at, updated_at
         from post
         where slug = #{slug}
           and status = #{status}
