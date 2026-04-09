@@ -4,9 +4,9 @@
 
 **Goal:** 实现一个最小博客系统，包含前台首页、前台文章详情页、后台登录、后台文章管理，并使用 Flyway 管理 MySQL 数据库结构。
 
-**Architecture:** 仓库包含三个应用：`blog-api` 负责 Spring Boot 后端、认证、文章管理与公开查询；`blog-web` 负责前台访客页面；`admin-web` 负责后台管理页面。两个前端通过 `/api` 调用后端，后端使用 Spring Security、JPA、Flyway 和 MySQL 完成认证与数据持久化。
+**Architecture:** 仓库包含三个应用：`blog-api` 负责 Spring Boot 后端、认证、文章管理与公开查询；`blog-web` 负责前台访客页面；`admin-web` 负责后台管理页面。两个前端通过 `/api` 调用后端，后端使用 Spring Security、MyBatis、Flyway 和 MySQL 完成认证与数据持久化。
 
-**Tech Stack:** Vue 3、Vite、Vue Router、Pinia、TypeScript、Vitest、Spring Boot 3、Spring Security、Spring Data JPA、Flyway、MySQL、Testcontainers、JUnit 5、MockMvc
+**Tech Stack:** Vue 3、Vite、Vue Router、Pinia、TypeScript、Vitest、Spring Boot 3、Spring Security、MyBatis Spring Boot Starter、Flyway、MySQL、Testcontainers、JUnit 5、MockMvc
 
 ---
 
@@ -35,8 +35,10 @@
 - Create: `blog-api/src/main/java/com/example/blogapi/dto/post/AdminPostResponse.java`
 - Create: `blog-api/src/main/java/com/example/blogapi/dto/post/PublicPostDetailResponse.java`
 - Create: `blog-api/src/main/java/com/example/blogapi/dto/post/PublicPostSummaryResponse.java`
-- Create: `blog-api/src/main/java/com/example/blogapi/repository/AdminUserRepository.java`
-- Create: `blog-api/src/main/java/com/example/blogapi/repository/PostRepository.java`
+- Create: `blog-api/src/main/java/com/example/blogapi/mapper/AdminUserMapper.java`
+- Create: `blog-api/src/main/java/com/example/blogapi/mapper/PostMapper.java`
+- Create: `blog-api/src/main/resources/mapper/AdminUserMapper.xml`
+- Create: `blog-api/src/main/resources/mapper/PostMapper.xml`
 - Create: `blog-api/src/main/java/com/example/blogapi/service/AdminBootstrapService.java`
 - Create: `blog-api/src/main/java/com/example/blogapi/service/AuthService.java`
 - Create: `blog-api/src/main/java/com/example/blogapi/service/PostService.java`
@@ -199,8 +201,9 @@ volumes:
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>3.0.3</version>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
@@ -272,11 +275,11 @@ spring:
     url: jdbc:mysql://localhost:3306/blog111?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: blog111
     password: blog111
-  jpa:
-    hibernate:
-      ddl-auto: validate
   flyway:
     enabled: true
+mybatis:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.example.blogapi.domain
 ```
 
 - [ ] **Step 4: 创建两个 Vue 应用骨架定义**
@@ -369,10 +372,12 @@ git commit -m "chore: scaffold minimal blog workspace"
 - Create: `blog-api/src/main/java/com/example/blogapi/domain/AdminUser.java`
 - Create: `blog-api/src/main/java/com/example/blogapi/domain/Post.java`
 - Create: `blog-api/src/main/java/com/example/blogapi/domain/PostStatus.java`
-- Create: `blog-api/src/main/java/com/example/blogapi/repository/AdminUserRepository.java`
-- Create: `blog-api/src/main/java/com/example/blogapi/repository/PostRepository.java`
+- Create: `blog-api/src/main/java/com/example/blogapi/mapper/AdminUserMapper.java`
+- Create: `blog-api/src/main/java/com/example/blogapi/mapper/PostMapper.java`
 - Create: `blog-api/src/main/java/com/example/blogapi/service/AdminBootstrapService.java`
 - Create: `blog-api/src/main/resources/db/migration/V1__create_admin_user_and_post.sql`
+- Create: `blog-api/src/main/resources/mapper/AdminUserMapper.xml`
+- Create: `blog-api/src/main/resources/mapper/PostMapper.xml`
 - Create: `blog-api/src/test/java/com/example/blogapi/support/MySqlContainerSupport.java`
 - Create: `blog-api/src/test/java/com/example/blogapi/FlywayMigrationTest.java`
 
@@ -425,7 +430,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public abstract class MySqlContainerSupport {
 
     @Container
-    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4")
+    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0")
         .withDatabaseName("blog111_test")
         .withUsername("blog111")
         .withPassword("blog111");
@@ -491,35 +496,17 @@ public enum PostStatus {
 ```java
 package com.example.blogapi.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "admin_user")
 public class AdminUser {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false, unique = true, length = 64)
     private String username;
-
-    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
-
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    protected AdminUser() {
+    public AdminUser() {
     }
 
     public AdminUser(String username, String passwordHash) {
@@ -528,58 +515,36 @@ public class AdminUser {
     }
 
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
     public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
 ```
 
 ```java
 package com.example.blogapi.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "post")
 public class Post {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
     private String title;
-
-    @Column(nullable = false, unique = true)
     private String slug;
-
-    @Column(nullable = false, length = 500)
     private String summary;
-
-    @Column(name = "content_markdown", nullable = false, columnDefinition = "LONGTEXT")
     private String contentMarkdown;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 32)
     private PostStatus status;
-
-    @Column(name = "published_at")
     private LocalDateTime publishedAt;
-
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    protected Post() {
+    public Post() {
     }
 
     public Post(String title, String slug, String summary, String contentMarkdown, PostStatus status) {
@@ -593,55 +558,60 @@ public class Post {
         }
     }
 
-    public void update(String title, String slug, String summary, String contentMarkdown, PostStatus status) {
-        this.title = title;
-        this.slug = slug;
-        this.summary = summary;
-        this.contentMarkdown = contentMarkdown;
-        if (this.status != PostStatus.PUBLISHED && status == PostStatus.PUBLISHED && this.publishedAt == null) {
-            this.publishedAt = LocalDateTime.now();
-        }
-        this.status = status;
-    }
-
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
     public String getSlug() { return slug; }
+    public void setSlug(String slug) { this.slug = slug; }
     public String getSummary() { return summary; }
+    public void setSummary(String summary) { this.summary = summary; }
     public String getContentMarkdown() { return contentMarkdown; }
+    public void setContentMarkdown(String contentMarkdown) { this.contentMarkdown = contentMarkdown; }
     public PostStatus getStatus() { return status; }
+    public void setStatus(PostStatus status) { this.status = status; }
     public LocalDateTime getPublishedAt() { return publishedAt; }
+    public void setPublishedAt(LocalDateTime publishedAt) { this.publishedAt = publishedAt; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
 ```
 
-- [ ] **Step 4: 添加仓储与管理员初始化服务**
+- [ ] **Step 4: 添加 Mapper 与管理员初始化服务**
 
 ```java
-package com.example.blogapi.repository;
+package com.example.blogapi.mapper;
 
 import com.example.blogapi.domain.AdminUser;
 import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
-public interface AdminUserRepository extends JpaRepository<AdminUser, Long> {
-    Optional<AdminUser> findByUsername(String username);
-    boolean existsByUsername(String username);
+@Mapper
+public interface AdminUserMapper {
+    Optional<AdminUser> findByUsername(@Param("username") String username);
+    boolean existsByUsername(@Param("username") String username);
+    void insert(AdminUser adminUser);
 }
 ```
 
 ```java
-package com.example.blogapi.repository;
+package com.example.blogapi.mapper;
 
 import com.example.blogapi.domain.Post;
 import com.example.blogapi.domain.PostStatus;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
-public interface PostRepository extends JpaRepository<Post, Long> {
-    List<Post> findAllByStatusOrderByPublishedAtDesc(PostStatus status);
-    Optional<Post> findBySlugAndStatus(String slug, PostStatus status);
-    boolean existsBySlug(String slug);
+@Mapper
+public interface PostMapper {
+    List<Post> findAllByStatusOrderByPublishedAtDesc(@Param("status") PostStatus status);
+    Optional<Post> findBySlugAndStatus(@Param("slug") String slug, @Param("status") PostStatus status);
+    boolean existsBySlug(@Param("slug") String slug);
 }
 ```
 
@@ -649,7 +619,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 package com.example.blogapi.service;
 
 import com.example.blogapi.domain.AdminUser;
-import com.example.blogapi.repository.AdminUserRepository;
+import com.example.blogapi.mapper.AdminUserMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -658,16 +628,86 @@ import org.springframework.stereotype.Component;
 public class AdminBootstrapService {
 
     public AdminBootstrapService(
-        AdminUserRepository adminUserRepository,
+        AdminUserMapper adminUserMapper,
         PasswordEncoder passwordEncoder,
         @Value("${blog.bootstrap-admin.username}") String username,
         @Value("${blog.bootstrap-admin.password}") String password
     ) {
-        if (!adminUserRepository.existsByUsername(username)) {
-            adminUserRepository.save(new AdminUser(username, passwordEncoder.encode(password)));
+        if (!adminUserMapper.existsByUsername(username)) {
+            adminUserMapper.insert(new AdminUser(username, passwordEncoder.encode(password)));
         }
     }
 }
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.blogapi.mapper.AdminUserMapper">
+  <resultMap id="adminUserMap" type="com.example.blogapi.domain.AdminUser">
+    <id property="id" column="id" />
+    <result property="username" column="username" />
+    <result property="passwordHash" column="password_hash" />
+    <result property="createdAt" column="created_at" />
+    <result property="updatedAt" column="updated_at" />
+  </resultMap>
+
+  <select id="findByUsername" resultMap="adminUserMap">
+    select id, username, password_hash, created_at, updated_at
+    from admin_user
+    where username = #{username}
+    limit 1
+  </select>
+
+  <select id="existsByUsername" resultType="boolean">
+    select exists(select 1 from admin_user where username = #{username})
+  </select>
+
+  <insert id="insert" parameterType="com.example.blogapi.domain.AdminUser" useGeneratedKeys="true" keyProperty="id">
+    insert into admin_user(username, password_hash)
+    values(#{username}, #{passwordHash})
+  </insert>
+</mapper>
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.blogapi.mapper.PostMapper">
+  <resultMap id="postMap" type="com.example.blogapi.domain.Post">
+    <id property="id" column="id" />
+    <result property="title" column="title" />
+    <result property="slug" column="slug" />
+    <result property="summary" column="summary" />
+    <result property="contentMarkdown" column="content_markdown" />
+    <result property="status" column="status" javaType="com.example.blogapi.domain.PostStatus" />
+    <result property="publishedAt" column="published_at" />
+    <result property="createdAt" column="created_at" />
+    <result property="updatedAt" column="updated_at" />
+  </resultMap>
+
+  <select id="findAllByStatusOrderByPublishedAtDesc" resultMap="postMap">
+    select id, title, slug, summary, content_markdown, status, published_at, created_at, updated_at
+    from post
+    where status = #{status}
+    order by published_at desc
+  </select>
+
+  <select id="findBySlugAndStatus" resultMap="postMap">
+    select id, title, slug, summary, content_markdown, status, published_at, created_at, updated_at
+    from post
+    where slug = #{slug} and status = #{status}
+    limit 1
+  </select>
+
+  <select id="existsBySlug" resultType="boolean">
+    select exists(select 1 from post where slug = #{slug})
+  </select>
+</mapper>
 ```
 
 ```yaml

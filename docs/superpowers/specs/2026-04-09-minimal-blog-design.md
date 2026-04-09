@@ -11,6 +11,7 @@
 - 后端：Spring Boot
 - 前端：Vue
 - 数据库：MySQL
+- 数据库访问：MyBatis
 - 数据库迁移：Flyway
 
 第一版严格控制范围，只包含以下能力：
@@ -72,6 +73,7 @@
 - 两个前端都通过 `/api` 调用后端接口
 - Nginx 根据子域名分发请求，并把 `/api` 反向代理到 Spring Boot
 - Spring Boot 连接 MySQL，并在启动时执行 Flyway 迁移
+- Spring Boot 通过 MyBatis Mapper 访问数据库
 
 这个设计不需要单独增加第三个 API 域名，部署结构也更直观。
 
@@ -172,6 +174,16 @@
 - 已发布文章如果改回草稿，需要从前台结果中消失
 - `published_at` 在文章首次发布时写入
 
+## 数据访问策略
+
+后端数据库操控统一使用 MyBatis。
+
+- 不使用 Spring Data JPA Repository
+- 通过 `Mapper` 接口与 SQL 完成查询、插入、更新、删除
+- Java 领域对象继续保留清晰的数据结构，但字段映射和 SQL 逻辑由 MyBatis 显式控制
+
+这样可以让 SQL 行为更透明，也更符合你刚刚明确提出的实现偏好。
+
 ## Markdown 处理方式
 
 - 数据库中保存 Markdown 原文，字段为 `content_markdown`
@@ -226,7 +238,7 @@ Flyway 从第一天就必须接入。
 规则如下：
 
 - Flyway 只负责建表和结构迁移
-- Spring Boot 启动时检查是否已有管理员账号
+- Spring Boot 启动时通过 MyBatis 查询是否已有管理员账号
 - 如果没有管理员账号，则根据配置的引导凭据创建一个初始管理员
 - 引导密码写入数据库前必须先做哈希处理
 
@@ -317,6 +329,7 @@ blog111/
 - 前端使用 Vue
 - 后端使用 Spring Boot
 - 数据库使用 MySQL
+- 数据库访问使用 MyBatis
 - 内容以 Markdown 形式存入数据库
 - 认证方式为单管理员账号密码
 - 文章状态为 `DRAFT` 和 `PUBLISHED`
