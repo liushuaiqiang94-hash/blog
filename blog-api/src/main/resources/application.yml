@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/blog111?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: blog111
+    password: blog111
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true

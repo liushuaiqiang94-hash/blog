@@ -1,1 +1,22 @@
-.worktrees/
+# Java
+blog-api/target/
+blog-api/.mvn/
+
+# Node
+blog-web/node_modules/
+admin-web/node_modules/
+blog-web/dist/
+admin-web/dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+*.env
+*.local

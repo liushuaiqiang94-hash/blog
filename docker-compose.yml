@@ -1,0 +1,16 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: blog111-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: blog111
+      MYSQL_USER: blog111
+      MYSQL_PASSWORD: blog111
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
