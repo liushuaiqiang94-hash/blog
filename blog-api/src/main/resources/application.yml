@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/blog111?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: blog111
-    password: blog111
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/blog111?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:blog111}
+    password: ${SPRING_DATASOURCE_PASSWORD:blog111}
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -13,8 +13,11 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
+server:
+  forward-headers-strategy: framework
+
 blog:
   bootstrap:
     admin:
-      username: admin
-      password: change-me-now
+      username: ${BLOG_BOOTSTRAP_ADMIN_USERNAME:admin}
+      password: ${BLOG_BOOTSTRAP_ADMIN_PASSWORD:Lsq_818818}
