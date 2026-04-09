@@ -13,6 +13,8 @@ public abstract class MySqlContainerSupport {
             .withPassword("blog111");
 
     static {
+        // Docker 29.x can break Testcontainers 1.x auto-detection on Windows.
+        System.setProperty("api.version", "1.44");
         MYSQL.start();
     }
 
