@@ -1,3 +1,6 @@
+# Worktrees
+.worktrees/
+
 # Java
 blog-api/target/
 blog-api/.mvn/
